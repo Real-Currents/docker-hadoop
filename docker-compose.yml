@@ -17,6 +17,8 @@ services:
   datanode1:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
     container_name: datanode1
+    ports:
+      - 9864:9864
     volumes:
       - hadoop_datanode1:/hadoop/dfs/data
     environment:
@@ -24,25 +26,29 @@ services:
     env_file:
       - ./hadoop.env
 
-  # datanode2:
-  #   image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
-  #   container_name: datanode2
-  #   volumes:
-  #     - hadoop_datanode2:/hadoop/dfs/data
-  #   environment:
-  #     SERVICE_PRECONDITION: "namenode:9870"
-  #   env_file:
-  #     - ./hadoop.env
-  #
-  # datanode3:
-  #   image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
-  #   container_name: datanode3
-  #   volumes:
-  #     - hadoop_datanode3:/hadoop/dfs/data
-  #   environment:
-  #     SERVICE_PRECONDITION: "namenode:9870"
-  #   env_file:
-  #     - ./hadoop.env
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
+    container_name: datanode2
+    ports:
+      - 9865:9864
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864"
+    env_file:
+      - ./hadoop.env
+
+  datanode3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
+    container_name: datanode3
+    ports:
+      - 9866:9864
+    volumes:
+      - hadoop_datanode3:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870 datanode2:9864"
+    env_file:
+      - ./hadoop.env
 
   resourcemanager:
     image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.1.1-java8
@@ -51,7 +57,7 @@ services:
       - 8088:8088
       - 8888:8888
     environment:
-      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864"
+      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 datanode2:9864 datanode3:9864 "
     env_file:
       - ./hadoop.env
 
@@ -80,6 +86,6 @@ services:
 volumes:
   hadoop_namenode:
   hadoop_datanode1:
-  # hadoop_datanode2:
-  # hadoop_datanode3:
+  hadoop_datanode2:
+  hadoop_datanode3:
   hadoop_historyserver:
