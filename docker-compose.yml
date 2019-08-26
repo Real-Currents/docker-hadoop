@@ -3,114 +3,76 @@ version: "3"
 services:
 
     namenode:
-        image: bde2020/hadoop-namenode:2.0.0-hadoop3.1.1-java8
+        image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
         container_name: namenode
-        ports:
-          - 50070:9870
-          - 8020:9000
-        volumes:
-          - hadoop_namenode:/hadoop/dfs/name
         environment:
           - CLUSTER_NAME=test
         env_file:
           - ./hadoop.env
+        ports:
+          - "50070:50070"
+        volumes:
+          - namenode:/hadoop/dfs/name
 
     datanode1:
-        image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
+        image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
         container_name: datanode1
+        environment:
+          SERVICE_PRECONDITION: "namenode:50070"
+        env_file:
+          - ./hadoop.env
         ports:
-          - 9864:9864
+          - 9864:50075
         volumes:
           - hadoop_datanode1:/hadoop/dfs/data
-        environment:
-          SERVICE_PRECONDITION: "namenode:9870"
-        env_file:
-          - ./hadoop.env
 
     datanode2:
-        image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
+        image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
         container_name: datanode2
+        env_file:
+          - ./hadoop.env
+        environment:
+          SERVICE_PRECONDITION: "namenode:50070 datanode1:50075"
         ports:
-          - 9865:9864
+          - 9865:50075
         volumes:
           - hadoop_datanode2:/hadoop/dfs/data
-        environment:
-          SERVICE_PRECONDITION: "namenode:9870 datanode1:9864"
-        env_file:
-          - ./hadoop.env
 
     datanode3:
-        image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.1-java8
+        image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
         container_name: datanode3
+        env_file:
+          - ./hadoop.env
+        environment:
+          SERVICE_PRECONDITION: "namenode:50070 datanode2:50075"
         ports:
-          - 9866:9864
+          - 9866:50075
         volumes:
           - hadoop_datanode3:/hadoop/dfs/data
-        environment:
-          SERVICE_PRECONDITION: "namenode:9870 datanode2:9864"
-        env_file:
-          - ./hadoop.env
-
-    resourcemanager:
-        image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.1.1-java8
-        container_name: resourcemanager
-        ports:
-          - 8088:8088
-          - 8888:8888
-        environment:
-          SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 datanode2:9864 datanode3:9864 "
-        env_file:
-          - ./hadoop.env
-
-    nodemanager1:
-        image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.1.1-java8
-        container_name: nodemanager
-        ports:
-          - 8042:8042
-        environment:
-          SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 resourcemanager:8088"
-        env_file:
-          - ./hadoop.env
-
-    historyserver:
-        image: bde2020/hadoop-historyserver:2.0.0-hadoop3.1.1-java8
-        container_name: historyserver
-        ports:
-          - 8188:8188
-        environment:
-          SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 resourcemanager:8088"
-        volumes:
-          - hadoop_historyserver:/hadoop/yarn/timeline
-        env_file:
-          - ./hadoop.env
 
     hive-server:
         image: bde2020/hive:2.3.2-postgresql-metastore
         container_name: hive-server
         env_file:
-          - ./hadoop-hive.env
-        ports:
-          - 10000:10000
+          - ./hadoop.env
         environment:
           HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
           SERVICE_PRECONDITION: "hive-metastore:9083"
+        ports:
+          - "10000:10000"
 
     hive-metastore:
         image: bde2020/hive:2.3.2-postgresql-metastore
         container_name: hive-metastore
         env_file:
-          - ./hadoop-hive.env
-        ports:
-          - 9083:9083
+          - ./hadoop.env
         command: /opt/hive/bin/hive --service metastore
         environment:
-          SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 hive-metastore-postgresql:5432"
+          SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 datanode2:50075 datanode3:50075 hive-metastore-postgresql:5432"
 
     hive-metastore-postgresql:
         image: bde2020/hive-metastore-postgresql:2.3.0
         container_name: hive-metastore-postgresql
-        ports:
-          - 5432:5432
 
     presto-coordinator:
         image: shawnzhu/prestodb:0.181
@@ -118,8 +80,41 @@ services:
         ports:
           - 8080:8080
 
+    resourcemanager:
+        image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+        container_name: resourcemanager
+        ports:
+          - 8088:8088
+          - 8888:8888
+        environment:
+          SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 datanode2:50075 datanode3:50075"
+        env_file:
+          - ./hadoop.env
+
+    nodemanager1:
+        image: bde2020/hadoop-nodemanager:2.0.0-hadoop2.7.4-java8
+        container_name: nodemanager
+        ports:
+          - 8042:8042
+        environment:
+          SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 resourcemanager:8088"
+        env_file:
+          - ./hadoop.env
+
+    historyserver:
+        image: bde2020/hadoop-historyserver:2.0.0-hadoop2.7.4-java8
+        container_name: historyserver
+        ports:
+          - 8188:8188
+        environment:
+          SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 resourcemanager:8088"
+        volumes:
+          - hadoop_historyserver:/hadoop/yarn/timeline
+        env_file:
+          - ./hadoop.env
+
 volumes:
-  hadoop_namenode:
+  namenode:
   hadoop_datanode1:
   hadoop_datanode2:
   hadoop_datanode3:

@@ -36,7 +36,7 @@
         <artifact pattern="${m2-pattern}"/>
       </url>
       <!-- File resolver to add jars from the local system. -->
-      <filesystem name="test" checkmodified="true">
+      <filesystem name="hive" checkmodified="true">
         <artifact pattern="/tmp/[module]-[revision](-[classifier]).jar"/>
       </filesystem>
 
