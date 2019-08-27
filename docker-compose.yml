@@ -11,6 +11,7 @@ services:
           - ./hadoop.env
         ports:
           - "50070:50070"
+          - 9000:9000
         volumes:
           - namenode:/hadoop/dfs/name
 
