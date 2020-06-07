@@ -1,1 +1,14 @@
-data/
+.cph_*
+.idea
+.DS_Store
+.RData
+.Rhistory
+.Rproj.user
+*.Rproj
+app.js
+index.html
+data
+docker-*
+hadoop
+node_modules
+protobuf
